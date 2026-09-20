@@ -272,7 +272,157 @@ function PhilanxUI:CreateWindow(options)
                 if cb then pcall(cb, toggled) end
             end)
         end
+        function TabObj:CreateSlider(opts, min, max, default, cb)
+            local name = type(opts) == "table" and opts.Name or opts
+            local icon = type(opts) == "table" and opts.Icon or "🎚️"
+            min = type(opts) == "table" and opts.Min or min or 0
+            max = type(opts) == "table" and opts.Max or max or 100
+            default = type(opts) == "table" and opts.Default or default or min
 
+            local SliderFrame = Create("Frame", {
+                Parent = Page, BackgroundColor3 = Theme.Secondary,
+                Size = UDim2.new(1, 0, 0, 52)
+            })
+            AddCorner(SliderFrame, 6) AddStroke(SliderFrame, Theme.Border)
+
+            Create("TextLabel", {
+                Parent = SliderFrame, BackgroundTransparency = 1,
+                Position = UDim2.new(0, 12, 0, 6), Size = UDim2.new(1, -24, 0, 20),
+                Font = Enum.Font.GothamMedium, Text = icon .. "  " .. name,
+                TextColor3 = Theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left
+            })
+
+            local ValLabel = Create("TextLabel", {
+                Parent = SliderFrame, BackgroundTransparency = 1,
+                Position = UDim2.new(1, -60, 0, 6), Size = UDim2.new(0, 48, 0, 20),
+                Font = Enum.Font.GothamBold, Text = tostring(default),
+                TextColor3 = Theme.SubText, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Right
+            })
+
+            local Bar = Create("Frame", {
+                Parent = SliderFrame, BackgroundColor3 = Theme.Tertiary,
+                Position = UDim2.new(0, 12, 0, 35), Size = UDim2.new(1, -24, 0, 6)
+            })
+            AddCorner(Bar, 3)
+
+            local Fill = Create("Frame", {
+                Parent = Bar, BackgroundColor3 = Theme.Accent,
+                Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+            })
+            AddCorner(Fill, 3)
+
+            local dragging = false
+            Bar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+            end)
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local mousePos = UserInputService:GetMouseLocation().X
+                    local barPos = Bar.AbsolutePosition.X
+                    local barSize = Bar.AbsoluteSize.X
+                    local pos = math.clamp((mousePos - barPos) / barSize, 0, 1)
+                    local val = math.floor(min + ((max - min) * pos))
+                    Fill.Size = UDim2.new(pos, 0, 1, 0)
+                    ValLabel.Text = tostring(val)
+                    if cb then pcall(cb, val) end
+                end
+            end)
+        end
+
+        function TabObj:CreateDropdown(opts, list, cb)
+            local name = type(opts) == "table" and opts.Name or opts
+            local icon = type(opts) == "table" and opts.Icon or "📂"
+            list = type(opts) == "table" and opts.List or list or {}
+
+            local open = false
+            local DropFrame = Create("Frame", {
+                Parent = Page, BackgroundColor3 = Theme.Secondary,
+                Size = UDim2.new(1, 0, 0, 36), ClipsDescendants = true
+            })
+            AddCorner(DropFrame, 6) AddStroke(DropFrame, Theme.Border)
+
+            local DropBtn = Create("TextButton", {
+                Parent = DropFrame, BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 36), AutoButtonColor = false,
+                Font = Enum.Font.GothamMedium, Text = icon .. "  " .. name,
+                TextColor3 = Theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left
+            })
+
+            local Arrow = Create("TextLabel", {
+                Parent = DropBtn, BackgroundTransparency = 1,
+                Position = UDim2.new(1, -30, 0, 0), Size = UDim2.new(0, 20, 1, 0),
+                Font = Enum.Font.GothamBold, Text = "▼", TextColor3 = Theme.SubText, TextSize = 10
+            })
+
+            local ItemHolder = Create("Frame", {
+                Parent = DropFrame, BackgroundTransparency = 1,
+                Position = UDim2.new(0, 0, 0, 38), Size = UDim2.new(1, 0, 1, -38)
+            })
+            Create("UIListLayout", { Parent = ItemHolder, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) })
+
+            for _, item in ipairs(list) do
+                local ItemBtn = Create("TextButton", {
+                    Parent = ItemHolder, BackgroundColor3 = Theme.Tertiary,
+                    Size = UDim2.new(1, 0, 0, 30), AutoButtonColor = false,
+                    Font = Enum.Font.Gotham, Text = "    " .. tostring(item),
+                    TextColor3 = Theme.SubText, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left
+                })
+                AddCorner(ItemBtn, 4)
+                ItemBtn.MouseButton1Click:Connect(function()
+                    open = false
+                    TweenService:Create(DropFrame, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 36)}):Play()
+                    Arrow.Text = "▼"
+                    if cb then pcall(cb, item) end
+                end)
+            end
+
+            DropBtn.MouseButton1Click:Connect(function()
+                open = not open
+                local targetHeight = open and (36 + (#list * 32) + 6) or 36
+                TweenService:Create(DropFrame, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, targetHeight)}):Play()
+                Arrow.Text = open and "▲" or "▼"
+            end)
+        end
+
+        function TabObj:CreateInput(opts, cb)
+            local name = type(opts) == "table" and opts.Name or opts
+            local icon = type(opts) == "table" and opts.Icon or "⌨️"
+            local placeholder = type(opts) == "table" and opts.Placeholder or "Ketik di sini..."
+
+            local InputFrame = Create("Frame", {
+                Parent = Page, BackgroundColor3 = Theme.Secondary,
+                Size = UDim2.new(1, 0, 0, 56)
+            })
+            AddCorner(InputFrame, 6) AddStroke(InputFrame, Theme.Border)
+
+            Create("TextLabel", {
+                Parent = InputFrame, BackgroundTransparency = 1,
+                Position = UDim2.new(0, 12, 0, 6), Size = UDim2.new(1, -24, 0, 20),
+                Font = Enum.Font.GothamMedium, Text = icon .. "  " .. name,
+                TextColor3 = Theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left
+            })
+
+            local BoxBg = Create("Frame", {
+                Parent = InputFrame, BackgroundColor3 = Theme.Tertiary,
+                Position = UDim2.new(0, 12, 0, 28), Size = UDim2.new(1, -24, 0, 22)
+            })
+            AddCorner(BoxBg, 4)
+
+            local TextBox = Create("TextBox", {
+                Parent = BoxBg, BackgroundTransparency = 1,
+                Position = UDim2.new(0, 8, 0, 0), Size = UDim2.new(1, -16, 1, 0),
+                Font = Enum.Font.Gotham, PlaceholderText = placeholder,
+                PlaceholderColor3 = Theme.SubText, Text = "",
+                TextColor3 = Theme.Text, TextSize = 11, ClearTextOnFocus = false
+            })
+
+            TextBox.FocusLost:Connect(function(enterPressed)
+                if cb then pcall(cb, TextBox.Text, enterPressed) end
+            end)
+        end
         function TabObj:CreateParagraph(opts)
             local title = type(opts) == "table" and opts.Title or "Info"
             local desc = type(opts) == "table" and opts.Desc or opts
