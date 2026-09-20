@@ -1,0 +1,202 @@
+--[[
+    LIB-PHILANX UI Library with Integrated Key System
+    Version: 1.0.0
+]]
+
+local PhilanxUI = {}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+local Theme = {
+    Background = Color3.fromRGB(13, 17, 23),
+    Secondary = Color3.fromRGB(22, 27, 34),
+    Tertiary = Color3.fromRGB(33, 38, 45),
+    Accent = Color3.fromRGB(35, 155, 255),
+    Text = Color3.fromRGB(240, 246, 252),
+    SubText = Color3.fromRGB(139, 148, 158),
+    Border = Color3.fromRGB(48, 54, 61),
+    Success = Color3.fromRGB(46, 160, 67),
+    Error = Color3.fromRGB(248, 81, 73)
+}
+
+local function Create(cls, props)
+    local obj = Instance.new(cls)
+    for k, v in pairs(props or {}) do obj[k] = v end
+    return obj
+end
+
+local function AddCorner(p, r)
+    return Create("UICorner", { CornerRadius = UDim.new(0, r or 6), Parent = p })
+end
+
+local function AddStroke(p, col)
+    return Create("UIStroke", { Color = col or Theme.Border, Thickness = 1, Parent = p })
+end
+
+function PhilanxUI:KeySystem(options)
+    options = options or {}
+    local correctKey = options.CorrectKey or "PHILANX2026"
+    local keyLink = options.KeyLink or "https://discord.gg/philanx"
+
+    pcall(function()
+        if readfile and isfile and isfile("PhilanxKey.txt") and readfile("PhilanxKey.txt") == correctKey then
+            if options.Callback then options.Callback() end
+            return
+        end
+    end)
+
+    local ScreenGui = Create("ScreenGui", { Name = "PhilanxKey", Parent = CoreGui, ResetOnSpawn = false })
+    local Main = Create("Frame", {
+        Parent = ScreenGui, AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = Theme.Background, Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 380, 0, 200), BorderSizePixel = 0
+    })
+    AddCorner(Main, 10) AddStroke(Main, Theme.Border)
+
+    local Top = Create("Frame", { Parent = Main, BackgroundColor3 = Theme.Secondary, Size = UDim2.new(1, 0, 0, 38) })
+    AddCorner(Top, 10)
+    Create("TextLabel", {
+        Parent = Top, BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0),
+        Size = UDim2.new(1, -30, 1, 0), Font = Enum.Font.GothamBold,
+        Text = options.Title or "Philanx Hub - Key System", TextColor3 = Theme.Text, TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    local BoxBg = Create("Frame", {
+        Parent = Main, BackgroundColor3 = Theme.Secondary,
+        Position = UDim2.new(0, 20, 0, 55), Size = UDim2.new(1, -40, 0, 36)
+    })
+    AddCorner(BoxBg, 6) AddStroke(BoxBg, Theme.Border)
+
+    local Input = Create("TextBox", {
+        Parent = BoxBg, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 0),
+        Size = UDim2.new(1, -20, 1, 0), Font = Enum.Font.Gotham,
+        PlaceholderText = "Masukkan Key Valid...", PlaceholderColor3 = Theme.SubText,
+        Text = "", TextColor3 = Theme.Text, TextSize = 13
+    })
+
+    local Verify = Create("TextButton", {
+        Parent = Main, BackgroundColor3 = Theme.Accent,
+        Position = UDim2.new(0, 20, 0, 110), Size = UDim2.new(0.5, -25, 0, 36),
+        AutoButtonColor = false, Font = Enum.Font.GothamBold,
+        Text = "Verifikasi Key", TextColor3 = Color3.new(1, 1, 1), TextSize = 13
+    })
+    AddCorner(Verify, 6)
+
+    local GetKey = Create("TextButton", {
+        Parent = Main, BackgroundColor3 = Theme.Tertiary,
+        Position = UDim2.new(0.5, 5, 0, 110), Size = UDim2.new(0.5, -25, 0, 36),
+        AutoButtonColor = false, Font = Enum.Font.GothamBold,
+        Text = "Dapatkan Key", TextColor3 = Theme.Text, TextSize = 13
+    })
+    AddCorner(GetKey, 6) AddStroke(GetKey, Theme.Border)
+
+    GetKey.MouseButton1Click:Connect(function()
+        pcall(function() setclipboard(keyLink) end)
+        GetKey.Text = "Link Disalin!"
+        task.wait(1.5)
+        GetKey.Text = "Dapatkan Key"
+    end)
+
+    Verify.MouseButton1Click:Connect(function()
+        if Input.Text == correctKey then
+            Verify.BackgroundColor3 = Theme.Success
+            Verify.Text = "Key Benar!"
+            pcall(function() if writefile then writefile("PhilanxKey.txt", correctKey) end end)
+            task.wait(0.5)
+            ScreenGui:Destroy()
+            if options.Callback then options.Callback() end
+        else
+            Verify.BackgroundColor3 = Theme.Error
+            Verify.Text = "Key Salah!"
+            task.wait(1)
+            Verify.BackgroundColor3 = Theme.Accent
+            Verify.Text = "Verifikasi Key"
+        end
+    end)
+end
+
+function PhilanxUI:CreateWindow(options)
+    options = options or {}
+    local ScreenGui = Create("ScreenGui", { Name = "PhilanxWindow", Parent = CoreGui, ResetOnSpawn = false })
+    local Main = Create("Frame", {
+        Parent = ScreenGui, AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = Theme.Background, Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 500, 0, 340), BorderSizePixel = 0
+    })
+    AddCorner(Main, 10) AddStroke(Main, Theme.Border)
+
+    local Top = Create("Frame", { Parent = Main, BackgroundColor3 = Theme.Secondary, Size = UDim2.new(1, 0, 0, 40) })
+    AddCorner(Top, 10)
+    Create("TextLabel", {
+        Parent = Top, BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0),
+        Size = UDim2.new(1, -30, 1, 0), Font = Enum.Font.GothamBold,
+        Text = options.Title or "Philanx Hub", TextColor3 = Theme.Text, TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    local Sidebar = Create("ScrollingFrame", {
+        Parent = Main, BackgroundTransparency = 1,
+        Position = UDim2.new(0, 10, 0, 50), Size = UDim2.new(0, 120, 1, -60),
+        CanvasSize = UDim2.new(0, 0, 0, 0), ScrollBarThickness = 2
+    })
+    Create("UIListLayout", { Parent = Sidebar, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5) })
+
+    local Pages = Create("Frame", {
+        Parent = Main, BackgroundTransparency = 1,
+        Position = UDim2.new(0, 140, 0, 50), Size = UDim2.new(1, -150, 1, -60)
+    })
+
+    local WindowObj = {}
+    local first = true
+
+    function WindowObj:CreateTab(name)
+        local TabBtn = Create("TextButton", {
+            Parent = Sidebar, BackgroundColor3 = Theme.Secondary,
+            Size = UDim2.new(1, 0, 0, 32), AutoButtonColor = false,
+            Font = Enum.Font.GothamMedium, Text = name, TextColor3 = Theme.SubText, TextSize = 12
+        })
+        AddCorner(TabBtn, 6)
+
+        local Page = Create("ScrollingFrame", {
+            Parent = Pages, BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0), CanvasSize = UDim2.new(0, 0, 0, 0),
+            ScrollBarThickness = 2, Visible = false
+        })
+        Create("UIListLayout", { Parent = Page, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) })
+
+        if first then
+            first = false
+            Page.Visible = true
+            TabBtn.TextColor3 = Theme.Text
+            TabBtn.BackgroundColor3 = Theme.Tertiary
+        end
+
+        TabBtn.MouseButton1Click:Connect(function()
+            for _, p in pairs(Pages:GetChildren()) do if p:IsA("ScrollingFrame") then p.Visible = false end end
+            for _, b in pairs(Sidebar:GetChildren()) do
+                if b:IsA("TextButton") then b.TextColor3 = Theme.SubText b.BackgroundColor3 = Theme.Secondary end
+            end
+            Page.Visible = true
+            TabBtn.TextColor3 = Theme.Text
+            TabBtn.BackgroundColor3 = Theme.Tertiary
+        end)
+
+        local TabObj = {}
+        function TabObj:CreateButton(btnName, cb)
+            local Btn = Create("TextButton", {
+                Parent = Page, BackgroundColor3 = Theme.Secondary,
+                Size = UDim2.new(1, 0, 0, 34), AutoButtonColor = false,
+                Font = Enum.Font.GothamMedium, Text = btnName, TextColor3 = Theme.Text, TextSize = 12
+            })
+            AddCorner(Btn, 6) AddStroke(Btn, Theme.Border)
+            Btn.MouseButton1Click:Connect(function() if cb then pcall(cb) end end)
+        end
+        return TabObj
+    end
+
+    return WindowObj
+end
+
+return PhilanxUI
