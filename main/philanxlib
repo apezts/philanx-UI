@@ -39,12 +39,17 @@ function PhilanxUI:KeySystem(options)
     local correctKey = options.CorrectKey or "PHILANX2026"
     local keyLink = options.KeyLink or "https://discord.gg/philanx"
 
+    local keyValid = false
     pcall(function()
         if readfile and isfile and isfile("PhilanxKey.txt") and readfile("PhilanxKey.txt") == correctKey then
-            if options.Callback then options.Callback() end
-            return
+            keyValid = true
         end
     end)
+
+    if keyValid then
+        if options.Callback then options.Callback() end
+        return
+    end
 
     local ScreenGui = Create("ScreenGui", { Name = "PhilanxKey", Parent = CoreGui, ResetOnSpawn = false })
     local Main = Create("Frame", {
