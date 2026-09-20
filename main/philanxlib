@@ -151,11 +151,15 @@ function PhilanxUI:CreateWindow(options)
     local WindowObj = {}
     local first = true
 
-    function WindowObj:CreateTab(name)
+    function WindowObj:CreateTab(tabOpts)
+        local tabName = type(tabOpts) == "table" and tabOpts.Name or tabOpts
+        local tabIcon = type(tabOpts) == "table" and tabOpts.Icon or "📁"
+
         local TabBtn = Create("TextButton", {
             Parent = Sidebar, BackgroundColor3 = Theme.Secondary,
             Size = UDim2.new(1, 0, 0, 32), AutoButtonColor = false,
-            Font = Enum.Font.GothamMedium, Text = name, TextColor3 = Theme.SubText, TextSize = 12
+            Font = Enum.Font.GothamMedium, Text = "  " .. tabIcon .. "  " .. tabName,
+            TextColor3 = Theme.SubText, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left
         })
         AddCorner(TabBtn, 6)
 
@@ -184,14 +188,83 @@ function PhilanxUI:CreateWindow(options)
         end)
 
         local TabObj = {}
-        function TabObj:CreateButton(btnName, cb)
+        function TabObj:CreateButton(opts, cb)
+            local name = type(opts) == "table" and opts.Name or opts
+            local icon = type(opts) == "table" and opts.Icon or "🔘"
+
             local Btn = Create("TextButton", {
                 Parent = Page, BackgroundColor3 = Theme.Secondary,
                 Size = UDim2.new(1, 0, 0, 34), AutoButtonColor = false,
-                Font = Enum.Font.GothamMedium, Text = btnName, TextColor3 = Theme.Text, TextSize = 12
+                Font = Enum.Font.GothamMedium, Text = "  " .. icon .. "  " .. name,
+                TextColor3 = Theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left
             })
             AddCorner(Btn, 6) AddStroke(Btn, Theme.Border)
             Btn.MouseButton1Click:Connect(function() if cb then pcall(cb) end end)
+        end
+
+        function TabObj:CreateToggle(opts, default, cb)
+            local name = type(opts) == "table" and opts.Name or opts
+            local icon = type(opts) == "table" and opts.Icon or "☑️"
+            local toggled = default or false
+
+            local Tgl = Create("TextButton", {
+                Parent = Page, BackgroundColor3 = Theme.Secondary,
+                Size = UDim2.new(1, 0, 0, 34), AutoButtonColor = false, Text = ""
+            })
+            AddCorner(Tgl, 6) AddStroke(Tgl, Theme.Border)
+
+            Create("TextLabel", {
+                Parent = Tgl, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 0),
+                Size = UDim2.new(1, -60, 1, 0), Font = Enum.Font.GothamMedium,
+                Text = icon .. "  " .. name, TextColor3 = Theme.Text, TextSize = 12,
+                TextXAlignment = Enum.TextXAlignment.Left
+            })
+
+            local ToggleBox = Create("Frame", {
+                Parent = Tgl, AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = toggled and Theme.Accent or Theme.Tertiary,
+                Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 36, 0, 20)
+            })
+            AddCorner(ToggleBox, 10)
+
+            local Circle = Create("Frame", {
+                Parent = ToggleBox, BackgroundColor3 = Color3.new(1, 1, 1),
+                Position = toggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
+                Size = UDim2.new(0, 16, 0, 16)
+            })
+            AddCorner(Circle, 8)
+
+            Tgl.MouseButton1Click:Connect(function()
+                toggled = not toggled
+                TweenService:Create(ToggleBox, TweenInfo.new(0.2), {BackgroundColor3 = toggled and Theme.Accent or Theme.Tertiary}):Play()
+                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = toggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)}):Play()
+                if cb then pcall(cb, toggled) end
+            end)
+        end
+
+        function TabObj:CreateParagraph(opts)
+            local title = type(opts) == "table" and opts.Title or "Info"
+            local desc = type(opts) == "table" and opts.Desc or opts
+
+            local Para = Create("Frame", {
+                Parent = Page, BackgroundColor3 = Theme.Secondary,
+                Size = UDim2.new(1, 0, 0, 60)
+            })
+            AddCorner(Para, 6) AddStroke(Para, Theme.Border)
+
+            Create("TextLabel", {
+                Parent = Para, BackgroundTransparency = 1,
+                Position = UDim2.new(0, 12, 0, 8), Size = UDim2.new(1, -24, 0, 18),
+                Font = Enum.Font.GothamBold, Text = title, TextColor3 = Theme.Text, TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left
+            })
+
+            Create("TextLabel", {
+                Parent = Para, BackgroundTransparency = 1,
+                Position = UDim2.new(0, 12, 0, 28), Size = UDim2.new(1, -24, 0, 24),
+                Font = Enum.Font.Gotham, Text = desc, TextColor3 = Theme.SubText, TextSize = 11,
+                TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true
+            })
         end
         return TabObj
     end
