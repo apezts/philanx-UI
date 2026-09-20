@@ -20,6 +20,14 @@ local Theme = {
     Error = Color3.fromRGB(248, 81, 73)
 }
 
+function PhilanxUI:SetTheme(theme)
+    for k, v in pairs(theme or {}) do
+        if Theme[k] ~= nil then
+            Theme[k] = v
+        end
+    end
+end
+
 local function Create(cls, props)
     local obj = Instance.new(cls)
     for k, v in pairs(props or {}) do obj[k] = v end
@@ -32,6 +40,38 @@ end
 
 local function AddStroke(p, col)
     return Create("UIStroke", { Color = col or Theme.Border, Thickness = 1, Parent = p })
+end
+
+local function MakeDraggable(frame, handle)
+    local dragging = false
+    local dragStart, startPos
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if not dragging then return end
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
 end
 
 function PhilanxUI:KeySystem(options)
@@ -134,6 +174,8 @@ function PhilanxUI:CreateWindow(options)
 
     local Top = Create("Frame", { Parent = Main, BackgroundColor3 = Theme.Secondary, Size = UDim2.new(1, 0, 0, 40) })
     AddCorner(Top, 10)
+    MakeDraggable(Main, Top)
+
     Create("TextLabel", {
         Parent = Top, BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0),
         Size = UDim2.new(1, -90, 1, 0), Font = Enum.Font.GothamBold,
@@ -159,6 +201,23 @@ function PhilanxUI:CreateWindow(options)
         Position = UDim2.new(0, 10, 0, 50), Size = UDim2.new(1, -20, 1, -60)
     })
 
+    -- Floating Pill Toggle when minimized
+    local Pill = Create("TextButton", {
+        Parent = ScreenGui, Name = "PhilanxPill",
+        AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 50, 0, 50),
+        Size = UDim2.fromOffset(180, 40), BackgroundColor3 = Theme.Background,
+        BorderSizePixel = 0, Text = "", AutoButtonColor = false, Visible = false
+    })
+    AddCorner(Pill, 20) AddStroke(Pill, Theme.Border)
+    MakeDraggable(Pill, Pill)
+
+    Create("TextLabel", {
+        Parent = Pill, BackgroundTransparency = 1,
+        Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -24, 1, 0),
+        Font = Enum.Font.GothamBold, Text = (options.Icon or "⚡ ") .. " Toggle UI",
+        TextColor3 = Theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left
+    })
+
     local MinBtn = Create("TextButton", {
         Parent = Top, BackgroundColor3 = Theme.Tertiary,
         Position = UDim2.new(1, -62, 0.5, -12), Size = UDim2.new(0, 24, 0, 24),
@@ -168,8 +227,14 @@ function PhilanxUI:CreateWindow(options)
 
     MinBtn.MouseButton1Click:Connect(function()
         minimized = not minimized
-        Container.Visible = not minimized
-        TweenService:Create(Main, TweenInfo.new(0.2), {Size = minimized and UDim2.new(0, 500, 0, 40) or UDim2.new(0, 500, 0, 340)}):Play()
+        Main.Visible = not minimized
+        Pill.Visible = minimized
+    end)
+
+    Pill.MouseButton1Click:Connect(function()
+        minimized = false
+        Main.Visible = true
+        Pill.Visible = false
     end)
 
     local Sidebar = Create("ScrollingFrame", {
